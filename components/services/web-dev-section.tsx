@@ -1,8 +1,8 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { motion, useInView, useScroll, useTransform } from "framer-motion"
-import { Code, Globe, Smartphone, Layers, ArrowRight } from "lucide-react"
+import { useRef, useState, useEffect } from "react"
+import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion"
+import { Code, Globe, Smartphone, Layers, ArrowRight, Terminal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 export default function WebDevSection() {
@@ -18,6 +18,8 @@ export default function WebDevSection() {
 
   // State for interactive code demo
   const [activeTab, setActiveTab] = useState("html")
+  const [typingIndex, setTypingIndex] = useState(0)
+  const [currentLine, setCurrentLine] = useState(0)
 
   // Code snippets for the interactive demo
   const codeSnippets = {
@@ -73,6 +75,33 @@ document.addEventListener('DOMContentLoaded', () => {
   hero.classList.add('fade-in');
 });`,
   }
+
+  // Typing animation effect
+  useEffect(() => {
+    if (!isInView) return
+
+    const lines = codeSnippets[activeTab].split("\n")
+    const currentLineText = lines[currentLine] || ""
+
+    if (typingIndex < currentLineText.length) {
+      const timeout = setTimeout(() => {
+        setTypingIndex(typingIndex + 1)
+      }, 50)
+      return () => clearTimeout(timeout)
+    } else if (currentLine < lines.length - 1) {
+      const timeout = setTimeout(() => {
+        setCurrentLine(currentLine + 1)
+        setTypingIndex(0)
+      }, 100)
+      return () => clearTimeout(timeout)
+    }
+  }, [isInView, typingIndex, currentLine, activeTab])
+
+  // Reset typing animation when tab changes
+  useEffect(() => {
+    setTypingIndex(0)
+    setCurrentLine(0)
+  }, [activeTab])
 
   // Features with animated icons
   const features = [
@@ -166,15 +195,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
               {/* Code content */}
               <div className="absolute left-10 right-0 top-10 bottom-0 p-2 font-mono text-sm overflow-hidden">
-                <motion.pre
-                  key={activeTab}
-                  className="text-left"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <code className="language-javascript">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="h-full"
+                  >
                     {codeSnippets[activeTab].split("\n").map((line, i) => {
                       // Syntax highlighting simulation
                       let coloredLine = line
@@ -199,30 +228,33 @@ document.addEventListener('DOMContentLoaded', () => {
                       return (
                         <motion.div
                           key={i}
-                          className="h-6"
+                          className="h-6 flex items-center"
                           initial={{ x: -50, opacity: 0 }}
                           animate={{ x: 0, opacity: 1 }}
                           transition={{ duration: 0.3, delay: i * 0.03 }}
-                          dangerouslySetInnerHTML={{ __html: coloredLine }}
-                        />
+                        >
+                          {i === currentLine ? (
+                            <>
+                              <span dangerouslySetInnerHTML={{ __html: coloredLine.substring(0, typingIndex) }} />
+                              <motion.span
+                                className="inline-block w-[2px] h-4 bg-white ml-[1px]"
+                                animate={{ opacity: [1, 0, 1] }}
+                                transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }}
+                              />
+                            </>
+                          ) : i < currentLine ? (
+                            <span dangerouslySetInnerHTML={{ __html: coloredLine }} />
+                          ) : (
+                            <span></span>
+                          )}
+                        </motion.div>
                       )
                     })}
-                  </code>
-                </motion.pre>
-
-                {/* Blinking cursor */}
-                <motion.div
-                  className="absolute h-4 w-[2px] bg-white"
-                  style={{
-                    top: activeTab === "html" ? "80px" : activeTab === "css" ? "120px" : "100px",
-                    left: activeTab === "html" ? "60%" : activeTab === "css" ? "40%" : "30%",
-                  }}
-                  animate={{ opacity: [1, 0, 1] }}
-                  transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY }}
-                />
+                  </motion.div>
+                </AnimatePresence>
               </div>
 
-              {/* Live preview (simplified) */}
+              {/* Live preview */}
               <motion.div
                 className="absolute right-4 bottom-4 w-48 h-48 bg-white rounded-lg shadow-lg overflow-hidden"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -247,6 +279,61 @@ document.addEventListener('DOMContentLoaded', () => {
                   </motion.button>
                 </div>
               </motion.div>
+            </motion.div>
+
+            {/* Terminal window */}
+            <motion.div
+              className="absolute left-4 bottom-4 w-64 h-32 bg-slate-900 rounded-lg border border-purple-500/20 overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+              transition={{ duration: 0.5, delay: 1.2 }}
+            >
+              <div className="h-6 bg-slate-800 flex items-center px-3">
+                <Terminal size={12} className="text-purple-400 mr-2" />
+                <span className="text-xs text-purple-300">terminal</span>
+              </div>
+              <div className="p-2 font-mono text-xs text-green-400">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 1.4 }}
+                >
+                  $ npm install
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 1.8 }}
+                >
+                  Installing dependencies...
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 2.2 }}
+                >
+                  ✓ Done in 3.45s
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 2.6 }}
+                >
+                  $ npm run dev
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 3.0 }}
+                >
+                  <span className="text-purple-400">Ready on</span> http://localhost:3000
+                </motion.div>
+                <motion.div
+                  className="inline-block w-2 h-4 bg-green-400 ml-[1px] align-middle"
+                  animate={{ opacity: [1, 0, 1] }}
+                  transition={{ duration: 0.8, repeat: Number.POSITIVE_INFINITY }}
+                />
+              </div>
             </motion.div>
 
             {/* Development process visualization */}

@@ -273,14 +273,14 @@ export default function Hero() {
               Powering Your
             </motion.div>
 
-            <div className="h-[1em] relative text-4xl font-extrabold sm:text-5xl md:text-6xl lg:text-7xl">
+            <div className="h-[1.5em] relative text-4xl font-extrabold sm:text-5xl md:text-6xl lg:text-7xl overflow-visible">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentWordIndex}
-                  className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600"
-                  initial={{ y: 20, opacity: 0 }}
+                  className="absolute inset-0 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-600 flex items-center justify-center"
+                  initial={{ y: 15, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: -20, opacity: 0 }}
+                  exit={{ y: -15, opacity: 0 }}
                   transition={{ duration: 0.5 }}
                 >
                   {techWords[currentWordIndex]}
